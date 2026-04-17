@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Gateway Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#050508;--card:#0d0d14;--card2:#111119;
+  --border:#1c1c28;--border2:#252535;
+  --accent:#7c5cfc;--accent2:#00dfa2;--gold:#ffcc44;
+  --red:#ff4d6d;--yellow:#ffb347;
+  --text:#eeeef5;--muted:#52527a;--muted2:#3a3a58;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar{
+  position:fixed;top:0;left:0;bottom:0;width:220px;
+  background:var(--card);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:100;
+}
+.sb-logo{
+  padding:20px 18px 16px;
+  border-bottom:1px solid var(--border);
+}
+.sb-logo .logo-top{font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;}
+.sb-logo .logo-main{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--text);}
+.sb-logo .logo-main span{color:var(--accent);}
+.sb-live{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 18px 12px;font-size:10px;color:var(--accent2);letter-spacing:1px;
+}
+.sb-dot{width:6px;height:6px;border-radius:50%;background:var(--accent2);
+  box-shadow:0 0 8px var(--accent2);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+.sb-nav{flex:1;padding:8px 0;overflow-y:auto;}
+.nav-section{font-size:9px;color:var(--muted2);letter-spacing:1.5px;padding:12px 18px 6px;text-transform:uppercase;}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 18px;font-size:12px;color:var(--muted);
+  cursor:pointer;transition:all .15s;border-left:2px solid transparent;
+}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03);}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(124,92,252,.06);}
+.nav-icon{font-size:14px;width:18px;text-align:center;}
+
+.sb-footer{
+  padding:12px 18px;border-top:1px solid var(--border);
+  font-size:10px;color:var(--muted2);
+}
+
+/* ── Main ── */
+.main{margin-left:220px;min-height:100vh;}
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(5,5,8,.9);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px);
+  padding:0 28px;height:52px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.api-key-pill{
+  font-size:10px;color:var(--muted);
+  background:var(--card);border:1px solid var(--border);
+  padding:4px 10px;border-radius:6px;cursor:pointer;
+  transition:border-color .2s;
+}
+.api-key-pill:hover{border-color:var(--accent);color:var(--accent);}
+
+.content{padding:24px 28px;}
+
+/* ── Tabs ── */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── Stats ── */
+.stats-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:14px;margin-bottom:24px;
+}
+.stat{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:18px 16px;
+  position:relative;overflow:hidden;
+}
+.stat::before{
+  content:'';position:absolute;top:-30px;right:-30px;
+  width:80px;height:80px;border-radius:50%;
+  opacity:.1;
+}
+.stat.s1::before{background:var(--accent2);}
+.stat.s2::before{background:var(--accent);}
+.stat.s3::before{background:var(--yellow);}
+.stat.s4::before{background:var(--red);}
+.stat-val{
+  font-family:'Syne',sans-serif;font-size:24px;font-weight:800;
+  margin-bottom:4px;
+}
+.stat.s1 .stat-val{color:var(--accent2);}
+.stat.s2 .stat-val{color:var(--accent);}
+.stat.s3 .stat-val{color:var(--yellow);}
+.stat.s4 .stat-val{color:var(--red);}
+.stat-lbl{font-size:10px;color:var(--muted);letter-spacing:1px;}
+
+/* ── Cards ── */
+.row2{display:grid;grid-template-columns:360px 1fr;gap:16px;margin-bottom:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.card-h{
+  padding:12px 18px;border-bottom:1px solid var(--border);
+  font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);
+  display:flex;align-items:center;gap:8px;
+}
+.card-b{padding:18px;}
+
+/* ── Form ── */
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:6px;}
+.field input,.field select{
+  width:100%;background:var(--bg);
+  border:1px solid var(--border);color:var(--text);
+  padding:9px 12px;border-radius:8px;
+  font-family:inherit;font-size:12px;outline:none;
+  transition:border-color .2s;
+}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.quick-row{display:flex;gap:8px;margin-bottom:16px;}
+.qbtn{
+  flex:1;background:var(--bg);border:1px solid var(--border);
+  color:var(--muted);padding:7px;border-radius:6px;
+  cursor:pointer;font-family:inherit;font-size:11px;
+  transition:all .15s;
+}
+.qbtn:hover{border-color:var(--accent2);color:var(--accent2);}
+
+.btn{
+  width:100%;padding:10px;border-radius:8px;border:none;
+  font-family:inherit;font-size:12px;font-weight:700;
+  cursor:pointer;letter-spacing:.5px;transition:all .15s;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),#a78bfa);color:#fff;
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(124,92,252,.35);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-sm{
+  padding:5px 12px;border-radius:6px;border:none;
+  font-family:inherit;font-size:10px;font-weight:700;
+  cursor:pointer;letter-spacing:.5px;
+}
+.btn-cancel{background:rgba(255,77,109,.12);color:var(--red);border:1px solid rgba(255,77,109,.3);}
+.btn-cancel:hover{background:rgba(255,77,109,.2);}
+
+/* ── Active Order ── */
+.active-box{
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:10px;padding:16px;margin-top:14px;display:none;
+}
+.active-box.show{display:block;}
+.a-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+.a-oid{font-size:10px;color:var(--muted);}
+.a-oid strong{color:var(--accent2);}
+.a-amt{
+  font-family:'Syne',sans-serif;font-size:30px;font-weight:800;
+  text-align:center;color:var(--gold);margin:10px 0;
+}
+.a-amt small{font-size:12px;color:var(--muted);display:block;font-family:'JetBrains Mono';}
+.pay-link{
+  display:block;text-align:center;
+  background:rgba(0,223,162,.06);border:1px solid rgba(0,223,162,.2);
+  color:var(--accent2);font-size:11px;padding:8px;border-radius:8px;
+  text-decoration:none;margin-top:10px;word-break:break-all;
+  transition:background .2s;
+}
+.pay-link:hover{background:rgba(0,223,162,.12);}
+
+/* ── Badge ── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;
+  font-size:9px;font-weight:700;letter-spacing:.5px;
+}
+.b-success{background:rgba(0,223,162,.1);color:var(--accent2);border:1px solid rgba(0,223,162,.25);}
+.b-pending{background:rgba(255,179,71,.1);color:var(--yellow);border:1px solid rgba(255,179,71,.25);}
+.b-cancelled{background:rgba(255,77,109,.1);color:var(--red);border:1px solid rgba(255,77,109,.25);}
+.b-utr{background:rgba(255,179,71,.1);color:#ffb347;border:1px solid rgba(255,179,71,.3);}
+.btn-approve{background:rgba(0,223,162,.12);color:#00dfa2;border:1px solid rgba(0,223,162,.3);padding:4px 8px;border-radius:5px;font-family:inherit;font-size:9px;font-weight:700;cursor:pointer;margin-right:4px;}
+.btn-approve:hover{background:rgba(0,223,162,.25);}
+.btn-reject{background:rgba(255,77,109,.1);color:#ff4d6d;border:1px solid rgba(255,77,109,.3);padding:4px 8px;border-radius:5px;font-family:inherit;font-size:9px;font-weight:700;cursor:pointer;}
+.btn-reject:hover{background:rgba(255,77,109,.2);}
+
+
+/* ── Orders table ── */
+.tbl-wrap{max-height:460px;overflow-y:auto;}
+.tbl-wrap::-webkit-scrollbar{width:3px;}
+.tbl-wrap::-webkit-scrollbar-thumb{background:var(--border2);}
+.tbl-row{
+  display:grid;
+  grid-template-columns:80px 1fr 90px 100px 80px 70px;
+  align-items:center;padding:10px 18px;
+  border-bottom:1px solid var(--border);
+  font-size:11px;transition:background .1s;
+}
+.tbl-row:hover{background:rgba(255,255,255,.015);}
+.tbl-row.hdr{
+  font-size:9px;color:var(--muted);letter-spacing:1px;
+  background:rgba(0,0,0,.3);position:sticky;top:0;z-index:2;
+}
+.tbl-oid{color:var(--accent2);font-weight:700;}
+.tbl-lbl{color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tbl-amt{color:var(--gold);font-weight:700;}
+.tbl-sender{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.empty{padding:48px;text-align:center;color:var(--muted);font-size:12px;}
+.empty-ico{font-size:32px;margin-bottom:10px;opacity:.4;}
+
+/* ── API Docs ── */
+.api-section{margin-bottom:28px;}
+.api-title{
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:700;
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.method{
+  font-size:9px;font-weight:700;padding:3px 7px;border-radius:4px;letter-spacing:.5px;
+}
+.m-post{background:rgba(0,223,162,.15);color:var(--accent2);}
+.m-get{background:rgba(124,92,252,.15);color:var(--accent);}
+.endpoint-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:16px;margin-bottom:12px;
+}
+.ep-path{font-size:13px;color:var(--text);margin-bottom:8px;}
+.ep-desc{font-size:11px;color:var(--muted);margin-bottom:12px;}
+.code-block{
+  background:var(--bg);border:1px solid var(--border2);
+  border-radius:8px;padding:14px;font-size:11px;
+  color:#a0a0c0;overflow-x:auto;white-space:pre;line-height:1.7;
+  position:relative;
+}
+.copy-code{
+  position:absolute;top:8px;right:8px;
+  font-size:9px;color:var(--muted);background:var(--card);
+  border:1px solid var(--border2);padding:3px 8px;border-radius:4px;
+  cursor:pointer;font-family:inherit;
+}
+.copy-code:hover{color:var(--accent);}
+.tag-key{color:#7c5cfc;} .tag-str{color:#00dfa2;} .tag-num{color:#ffcc44;}
+.tag-comment{color:#3a3a58;}
+
+/* ── Settings ── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.setting-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;}
+.setting-title{font-size:11px;color:var(--muted);letter-spacing:1px;margin-bottom:14px;}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:20px;right:20px;
+  background:var(--card);border:1px solid var(--accent2);
+  color:var(--accent2);padding:10px 16px;border-radius:8px;
+  font-size:11px;font-weight:700;opacity:0;
+  transform:translateY(8px);transition:all .3s;z-index:999;pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateY(0);}
+#toast.err{border-color:var(--red);color:var(--red);}
+
+@media(max-width:900px){
+  .sidebar{width:60px;}
+  .sb-logo,.sb-live,.nav-section,.nav-item span:last-child,.sb-footer{display:none;}
+  .nav-icon{margin:0 auto;}
+  .nav-item{justify-content:center;padding:12px 0;}
+  .main{margin-left:60px;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .row2{grid-template-columns:1fr;}
+  .settings-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="logo-top">PAYMENT</div>
+    <div class="logo-main"><span>FAM</span>PAY GW</div>
+  </div>
+  <div class="sb-live"><div class="sb-dot"></div><span>LIVE</span></div>
+  <div class="sb-nav">
+    <div class="nav-section">MAIN</div>
+    <div class="nav-item active" onclick="switchTab('dashboard')">
+      <span class="nav-icon">⚡</span><span>Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('orders')">
+      <span class="nav-icon">📋</span><span>All Orders<span id="utrPendingBadge" style="color:#ffb347;font-size:9px;"></span></span>
+    </div>
+    <div class="nav-section">DEV</div>
+    <div class="nav-item" onclick="switchTab('api')">
+      <span class="nav-icon">🔌</span><span>API Docs</span>
+    </div>
+    <div class="nav-section">CONFIG</div>
+    <div class="nav-item" onclick="switchTab('settings')">
+      <span class="nav-icon">⚙️</span><span>Settings</span>
+    </div>
+  </div>
+  <div class="sb-footer">v2.0 · FamPay GW</div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="tabTitle">Dashboard</div>
+    <div class="topbar-right">
+      <div class="api-key-pill" id="apiKeyPill" onclick="copyApiKey()">🔑 Copy API Key</div>
+      <span id="lastRefresh" style="font-size:10px;color:var(--muted);">—</span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="tab-panel active" id="tab-dashboard">
+      <div class="stats-grid">
+        <div class="stat s1"><div class="stat-val" id="stCollected">₹0</div><div class="stat-lbl">COLLECTED</div></div>
+        <div class="stat s2"><div class="stat-val" id="stSuccess">0</div><div class="stat-lbl">SUCCESS</div></div>
+        <div class="stat s3"><div class="stat-val" id="stPending">0</div><div class="stat-lbl">PENDING</div></div>
+        <div class="stat s4"><div class="stat-val" id="stTotal">0</div><div class="stat-lbl">TOTAL</div></div>
+      </div>
+
+      <div class="row2">
+        <!-- Create Order -->
+        <div class="card">
+          <div class="card-h">⚡ CREATE ORDER</div>
+          <div class="card-b">
+            <div class="field">
+              <label>BASE AMOUNT (₹)</label>
+              <input type="number" id="amtIn" placeholder="100" min="1" step="1"/>
+            </div>
+            <div class="quick-row">
+              <button class="qbtn" onclick="sa(10)">₹10</button>
+              <button class="qbtn" onclick="sa(50)">₹50</button>
+              <button class="qbtn" onclick="sa(100)">₹100</button>
+              <button class="qbtn" onclick="sa(500)">₹500</button>
+            </div>
+            <div class="field">
+              <label>LABEL</label>
+              <input type="text" id="lblIn" placeholder="Order / Recharge / etc."/>
+            </div>
+            <div class="field">
+              <label>API KEY</label>
+              <input type="text" id="keyIn" placeholder="changeme-secret-key"/>
+            </div>
+            <button class="btn btn-primary" id="createBtn" onclick="createOrder()">⚡ GENERATE ORDER</button>
+
+            <div class="active-box" id="activeBox">
+              <div class="a-row">
+                <div class="a-oid">ORDER: <strong id="aOid">—</strong></div>
+                <button class="btn-sm btn-cancel" onclick="cancelOrder()">✕ CANCEL</button>
+              </div>
+              <div class="a-amt">
+                ₹<span id="aAmt">0</span>
+                <small>Send EXACTLY this amount</small>
+              </div>
+              <div style="text-align:center;margin-bottom:8px;">
+                <span id="aBadge" class="badge b-pending">⏳ PENDING</span>
+              </div>
+              <a class="pay-link" id="aPayLink" target="_blank" href="#">—</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent orders -->
+        <div class="card">
+          <div class="card-h">📋 RECENT ORDERS</div>
+          <div class="tbl-row hdr">
+            <div>ORDER</div><div>LABEL</div><div>AMOUNT</div><div>SENDER</div><div>STATUS</div><div></div>
+          </div>
+          <div class="tbl-wrap" id="recentList">
+            <div class="empty"><div class="empty-ico">📭</div>No orders yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ALL ORDERS ── -->
+    <div class="tab-panel" id="tab-orders">
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-h">📋 ALL ORDERS
+          <span style="margin-left:auto;font-size:9px;font-weight:400;" id="ordersCount">0 orders</span>
+        </div>
+        <div class="tbl-row hdr">
+          <div>ORDER</div><div>LABEL</div><div>AMOUNT</div><div>SENDER</div><div>STATUS</div><div>TIME</div>
+        </div>
+        <div class="tbl-wrap" id="allOrdersList">
+          <div class="empty"><div class="empty-ico">📭</div>No orders</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── API DOCS ── -->
+    <div class="tab-panel" id="tab-api">
+      <div class="api-section">
+        <div class="api-title">🔐 Authentication</div>
+        <div class="endpoint-card">
+          <div class="ep-desc">Pass your API key in every protected request header:</div>
+          <div class="code-block"><button class="copy-code" onclick="copyCode(this)">COPY</button><span class="tag-key">X-API-Key</span><span class="tag-str">: your-secret-api-key</span>
+<span class="tag-comment"># OR as query param:</span>
+<span class="tag-str">GET /api/stats?api_key=your-secret-api-key</span></div>
+        </div>
+      </div>
+
+      <div class="api-section">
+        <div class="api-title"><span class="method m-post">POST</span> Create Order</div>
+        <div class="endpoint-card">
+          <div class="ep-path">POST /api/create_order</div>
+          <div class="ep-desc">Create a new payment order. Returns unique penny amount + QR + pay_url.</div>
+          <div class="code-block"><button class="copy-code" onclick="copyCode(this)">COPY</button><span class="tag-comment"># Request</span>
+curl -X POST https://yourdomain.com/api/create_order \
+  -H <span class="tag-str">"X-API-Key: your-key"</span> \
+  -H <span class="tag-str">"Content-Type: application/json"</span> \
+  -d <span class="tag-str">'{"amount": 100, "label": "Order #42"}'</span>
+
+<span class="tag-comment"># Response</span>
+{
+  <span class="tag-key">"order_id"</span>: <span class="tag-str">"A1B2C3D4"</span>,
+  <span class="tag-key">"amount"</span>: <span class="tag-num">100</span>,
+  <span class="tag-key">"unique_amount"</span>: <span class="tag-num">100.03</span>,
+  <span class="tag-key">"status"</span>: <span class="tag-str">"PENDING"</span>,
+  <span class="tag-key">"pay_url"</span>: <span class="tag-str">"https://yourdomain.com/pay/A1B2C3D4"</span>,
+  <span class="tag-key">"qr_base64"</span>: <span class="tag-str">"iVBORw0KGgo..."</span>,
+  <span class="tag-key">"created_at"</span>: <span class="tag-str">"2026-04-16 14:42:01"</span>
+}</div>
+        </div>
+      </div>
+
+      <div class="api-section">
+        <div class="api-title"><span class="method m-get">GET</span> Order Status (Public)</div>
+        <div class="endpoint-card">
+          <div class="ep-path">GET /api/order/:order_id</div>
+          <div class="ep-desc">No API key needed. Use this for customer-side polling.</div>
+          <div class="code-block"><button class="copy-code" onclick="copyCode(this)">COPY</button>curl https://yourdomain.com/api/order/A1B2C3D4
+
+<span class="tag-comment"># Response when SUCCESS:</span>
+{
+  <span class="tag-key">"status"</span>: <span class="tag-str">"SUCCESS"</span>,
+  <span class="tag-key">"paid_by"</span>: <span class="tag-str">"Mr PANKAJ PANDIT"</span>,
+  <span class="tag-key">"paid_at"</span>: <span class="tag-str">"2026-04-16 14:45:22"</span>,
+  <span class="tag-key">"unique_amount"</span>: <span class="tag-num">100.03</span>
+}</div>
+        </div>
+      </div>
+
+      <div class="api-section">
+        <div class="api-title"><span class="method m-get">GET</span> Stats</div>
+        <div class="endpoint-card">
+          <div class="ep-path">GET /api/stats</div>
+          <div class="code-block"><button class="copy-code" onclick="copyCode(this)">COPY</button>curl -H <span class="tag-str">"X-API-Key: your-key"</span> https://yourdomain.com/api/stats
+
+{
+  <span class="tag-key">"total"</span>: <span class="tag-num">42</span>,
+  <span class="tag-key">"success"</span>: <span class="tag-num">38</span>,
+  <span class="tag-key">"pending"</span>: <span class="tag-num">3</span>,
+  <span class="tag-key">"cancelled"</span>: <span class="tag-num">1</span>,
+  <span class="tag-key">"total_collected"</span>: <span class="tag-num">4820.50</span>
+}</div>
+        </div>
+      </div>
+
+      <div class="api-section">
+        <div class="api-title"><span class="method m-post">POST</span> Cancel Order</div>
+        <div class="endpoint-card">
+          <div class="ep-path">POST /api/cancel/:order_id</div>
+          <div class="code-block"><button class="copy-code" onclick="copyCode(this)">COPY</button>curl -X POST -H <span class="tag-str">"X-API-Key: your-key"</span> \
+  https://yourdomain.com/api/cancel/A1B2C3D4</div>
+        </div>
+      </div>
+
+      <div class="api-section">
+        <div class="api-title"><span class="method m-post">POST</span> Update Config</div>
+        <div class="endpoint-card">
+          <div class="ep-path">POST /api/config</div>
+          <div class="code-block"><button class="copy-code" onclick="copyCode(this)">COPY</button>curl -X POST -H <span class="tag-str">"X-API-Key: your-key"</span> \
+  -H <span class="tag-str">"Content-Type: application/json"</span> \
+  -d <span class="tag-str">'{"upi_id": "newid@upi", "upi_name": "New Name"}'</span> \
+  https://yourdomain.com/api/config</div>
+        </div>
+      </div>
+
+      <div class="api-section">
+        <div class="api-title">☁️ Cloudflare Setup</div>
+        <div class="endpoint-card">
+          <div class="ep-desc">To expose your Termux server via Cloudflare Tunnel:</div>
+          <div class="code-block"><button class="copy-code" onclick="copyCode(this)">COPY</button><span class="tag-comment"># Install cloudflared in Termux</span>
+pkg install cloudflared
+
+<span class="tag-comment"># Start tunnel (no account needed - quick tunnel)</span>
+cloudflared tunnel --url http://localhost:5000
+
+<span class="tag-comment"># OR with custom domain (needs CF account):</span>
+cloudflared tunnel login
+cloudflared tunnel create fampay-gw
+cloudflared tunnel route dns fampay-gw pay.yourdomain.com
+cloudflared tunnel run fampay-gw</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ── -->
+    <div class="tab-panel" id="tab-settings">
+      <div class="settings-grid">
+        <div class="setting-card">
+          <div class="setting-title">💳 UPI CONFIGURATION</div>
+          <div class="field"><label>UPI ID</label><input type="text" id="setUpiId" placeholder="yourname@upi"/></div>
+          <div class="field"><label>DISPLAY NAME</label><input type="text" id="setUpiName" placeholder="Your Name"/></div>
+          <div class="field"><label>CURRENT API KEY</label><input type="text" id="setApiKeyCurrent" placeholder="changeme-secret-key"/></div>
+          <button class="btn btn-primary" onclick="saveConfig()">💾 SAVE CONFIG</button>
+        </div>
+        <div class="setting-card">
+          <div class="setting-title">🔑 API KEY</div>
+          <div class="field"><label>NEW API KEY (leave blank to keep current)</label><input type="text" id="setNewApiKey" placeholder="new-secret-key"/></div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.8;margin-top:8px;">
+            Your API key protects order creation and admin endpoints.<br>
+            Keep it secret — do not expose in frontend code.<br>
+            Only /api/order/:id is public (for customer polling).
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<div id="toast"></div>
+
+<script>
+let activeOrderId = null;
+let savedApiKey   = localStorage.getItem("gw_api_key") || "changeme-secret-key";
+let pollIt        = null;
+
+// ── Tab switching
+function switchTab(name) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById(`tab-${name}`).classList.add("active");
+  event.currentTarget.classList.add("active");
+  const titles = {dashboard:"Dashboard", orders:"All Orders", api:"API Docs", settings:"Settings"};
+  document.getElementById("tabTitle").textContent = titles[name];
+  if (name === "orders") loadAllOrders();
+  if (name === "settings") loadSettings();
+}
+
+function sa(v){ document.getElementById("amtIn").value = v; }
+
+// ── Create order
+async function createOrder() {
+  const amt   = document.getElementById("amtIn").value;
+  const label = document.getElementById("lblIn").value || "Payment";
+  const key   = document.getElementById("keyIn").value || savedApiKey;
+  if (!amt || parseFloat(amt) <= 0) return toast("Enter a valid amount", true);
+  document.getElementById("createBtn").disabled = true;
+  try {
+    const r = await fetch("/api/create_order", {
+      method: "POST",
+      headers: {"Content-Type":"application/json","X-API-Key": key},
+      body: JSON.stringify({amount: parseFloat(amt), label})
+    });
+    const o = await r.json();
+    if (o.error) throw new Error(o.error);
+    savedApiKey = key;
+    localStorage.setItem("gw_api_key", key);
+    activeOrderId = o.order_id;
+    document.getElementById("aOid").textContent   = o.order_id;
+    document.getElementById("aAmt").textContent   = o.unique_amount;
+    document.getElementById("aPayLink").href       = o.pay_url;
+    document.getElementById("aPayLink").textContent = o.pay_url;
+    document.getElementById("aBadge").className    = "badge b-pending";
+    document.getElementById("aBadge").textContent  = "⏳ PENDING";
+    document.getElementById("activeBox").classList.add("show");
+    document.getElementById("amtIn").value  = "";
+    document.getElementById("lblIn").value  = "";
+    toast(`Order ${o.order_id} created — ₹${o.unique_amount}`);
+    startPoll();
+    refreshStats(); refreshRecent();
+  } catch(e) { toast(e.message, true); }
+  finally { document.getElementById("createBtn").disabled = false; }
+}
+
+async function cancelOrder() {
+  if (!activeOrderId) return;
+  await fetch(`/api/cancel/${activeOrderId}`, {
+    method:"POST", headers:{"X-API-Key": savedApiKey}
+  });
+  document.getElementById("activeBox").classList.remove("show");
+  activeOrderId = null;
+  if (pollIt) clearInterval(pollIt);
+  refreshRecent(); refreshStats();
+}
+
+function startPoll() {
+  if (pollIt) clearInterval(pollIt);
+  pollIt = setInterval(async () => {
+    if (!activeOrderId) return;
+    try {
+      const r = await fetch(`/api/order/${activeOrderId}`);
+      const o = await r.json();
+      if (o.status === "SUCCESS") {
+        document.getElementById("aBadge").className  = "badge b-success";
+        document.getElementById("aBadge").textContent = "✅ SUCCESS";
+        toast(`₹${o.unique_amount} received from ${o.paid_by}!`);
+        clearInterval(pollIt);
+        refreshRecent(); refreshStats();
+      } else if (o.status === "CANCELLED") {
+        document.getElementById("activeBox").classList.remove("show");
+        clearInterval(pollIt);
+      }
+    } catch(e){}
+  }, 4000);
+}
+
+// ── Stats
+async function refreshStats() {
+  try {
+    const r = await fetch(`/api/stats?api_key=${savedApiKey}`);
+    const d = await r.json();
+    document.getElementById("stCollected").textContent = `₹${d.total_collected}`;
+    document.getElementById("stSuccess").textContent   = d.success;
+    document.getElementById("stPending").textContent   = d.pending;
+    document.getElementById("stTotal").textContent     = d.total;
+    const ub=document.getElementById("utrPendingBadge");if(ub){ub.textContent=d.utr_pending>0?" ("+d.utr_pending+" UTR)":"";}
+    document.getElementById("lastRefresh").textContent = new Date().toLocaleTimeString();
+  } catch(e){}
+}
+
+// ── Recent orders (dashboard)
+async function refreshRecent() {
+  try {
+    const r  = await fetch(`/api/orders?api_key=${savedApiKey}`);
+    const os = await r.json();
+    const el = document.getElementById("recentList");
+    if (!os.length) { el.innerHTML = `<div class="empty"><div class="empty-ico">📭</div>No orders</div>`; return; }
+    el.innerHTML = os.slice(0,20).map(function(o){
+      var isUtr = o.utr_status === "PENDING_VERIFY";
+      var statusBadge = isUtr
+        ? '<span class="badge b-utr">🕐 UTR</span>'
+        : '<span class="badge '+(o.status==="SUCCESS"?"b-success":o.status==="CANCELLED"?"b-cancelled":"b-pending")+'">'+(o.status==="SUCCESS"?"✅":o.status==="CANCELLED"?"✕":"⏳")+' '+o.status+'</span>';
+      var actionBtn = isUtr
+        ? '<button class="btn-approve" onclick="verifyUtr(\''+o.order_id+'\',\'approve\')">✓ OK</button><button class="btn-reject" onclick="verifyUtr(\''+o.order_id+'\',\'reject\')">✕</button>'
+        : (o.status==="PENDING" ? '<button class="btn-sm btn-cancel" onclick="cancelById(\''+o.order_id+'\')">✕</button>' : "—");
+      var utrRow = isUtr ? '<div style="grid-column:1/-1;padding:2px 0 8px;font-size:10px;color:#ffb347;">UTR: '+o.utr+'</div>' : "";
+      return '<div class="tbl-row" style="'+(isUtr?"background:rgba(255,179,71,.03);border-left:2px solid #ffb347;":"")+'"><div class="tbl-oid">'+o.order_id+'</div><div class="tbl-lbl">'+o.label+'</div><div class="tbl-amt">₹'+o.unique_amount+'</div><div class="tbl-sender">'+(o.paid_by||"—")+'</div><div>'+statusBadge+'</div><div>'+actionBtn+'</div></div>'+utrRow;
+    }).join("");
+  } catch(e){}
+}
+
+// ── All orders
+async function loadAllOrders() {
+  try {
+    const r  = await fetch(`/api/orders?api_key=${savedApiKey}`);
+    const os = await r.json();
+    document.getElementById("ordersCount").textContent = `${os.length} orders`;
+    const el = document.getElementById("allOrdersList");
+    if (!os.length) { el.innerHTML = `<div class="empty"><div class="empty-ico">📭</div>No orders</div>`; return; }
+    el.innerHTML = os.map(o => `
+      <div class="tbl-row">
+        <div class="tbl-oid">${o.order_id}</div>
+        <div class="tbl-lbl">${o.label}</div>
+        <div class="tbl-amt">₹${o.unique_amount}</div>
+        <div class="tbl-sender">${o.paid_by||"—"}</div>
+        <div><span class="badge ${o.status==="SUCCESS"?"b-success":o.status==="CANCELLED"?"b-cancelled":"b-pending"}">
+          ${o.status==="SUCCESS"?"✅":o.status==="CANCELLED"?"✕":"⏳"} ${o.status}
+        </span></div>
+        <div style="font-size:9px;color:var(--muted);">${o.created_at?.slice(11,16)||"—"}</div>
+      </div>`).join("");
+  } catch(e){}
+}
+
+async function verifyUtr(oid, action) {
+  try {
+    const r = await fetch('/api/order/'+oid+'/verify_utr', {
+      method:"POST",
+      headers:{"Content-Type":"application/json","X-API-Key":savedApiKey},
+      body: JSON.stringify({action})
+    });
+    const d = await r.json();
+    if (d.error) { toast(d.error, true); return; }
+    toast(action==="approve" ? "OK Approved "+oid : "Rejected "+oid);
+    refreshRecent(); refreshStats(); loadAllOrders();
+  } catch(e) { toast("Error", true); }
+}
+
+async function cancelById(oid) {
+  await fetch(`/api/cancel/${oid}`, {method:"POST",headers:{"X-API-Key":savedApiKey}});
+  loadAllOrders(); refreshRecent(); refreshStats();
+}
+
+// ── Settings
+async function loadSettings() {
+  try {
+    const r = await fetch(`/api/config?api_key=${savedApiKey}`);
+    const d = await r.json();
+    document.getElementById("setUpiId").value   = d.upi_id   || "";
+    document.getElementById("setUpiName").value = d.upi_name || "";
+    document.getElementById("setApiKeyCurrent").value = savedApiKey;
+  } catch(e) {}
+}
+
+async function saveConfig() {
+  const upi_id   = document.getElementById("setUpiId").value;
+  const upi_name = document.getElementById("setUpiName").value;
+  const curKey   = document.getElementById("setApiKeyCurrent").value;
+  const newKey   = document.getElementById("setNewApiKey").value;
+  const payload  = {upi_id, upi_name};
+  if (newKey) payload.api_key = newKey;
+  try {
+    const r = await fetch("/api/config", {
+      method:"POST",
+      headers:{"Content-Type":"application/json","X-API-Key":curKey},
+      body: JSON.stringify(payload)
+    });
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    if (newKey) { savedApiKey = newKey; localStorage.setItem("gw_api_key", newKey); }
+    toast("Config saved ✓");
+  } catch(e) { toast(e.message, true); }
+}
+
+// ── Copy helpers
+function copyApiKey() {
+  navigator.clipboard.writeText(savedApiKey).catch(()=>{});
+  toast("API Key copied!");
+}
+function copyCode(btn) {
+  const code = btn.parentElement.textContent.replace("COPY","").trim();
+  navigator.clipboard.writeText(code).catch(()=>{});
+  btn.textContent = "✓";
+  setTimeout(() => btn.textContent = "COPY", 1500);
+}
+
+function toast(msg, isErr=false) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.className = isErr ? "show err" : "show";
+  setTimeout(() => el.className = "", 3000);
+}
+
+// ── Init
+document.getElementById("keyIn").value = savedApiKey;
+refreshStats();
+refreshRecent();
+setInterval(() => { refreshStats(); refreshRecent(); }, 8000);
+</script>
+</body>
+</html>

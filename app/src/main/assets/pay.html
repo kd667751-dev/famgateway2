@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Complete Payment</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#04040a; --card:#0c0c18; --border:#1a1a30;
+  --accent:#6c63ff; --gold:#f5c842; --green:#00e5a0;
+  --red:#ff4d6d; --text:#e8e8f0; --muted:#5a5a7a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'Space Grotesk',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+.bg-wrap{position:fixed;inset:0;z-index:0;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.18;animation:float 10s ease-in-out infinite;}
+.orb1{width:500px;height:500px;background:#6c63ff;top:-150px;left:-100px;}
+.orb2{width:400px;height:400px;background:#00e5a0;bottom:-100px;right:-80px;animation-delay:4s;}
+.orb3{width:300px;height:300px;background:#f5c842;top:40%;left:60%;animation-delay:7s;}
+@keyframes float{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-30px) scale(1.05);}}
+.grid-lines{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(108,99,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.04) 1px,transparent 1px);background-size:60px 60px;}
+.page-wrap{position:relative;z-index:1;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;}
+
+.card{width:100%;max-width:420px;background:rgba(12,12,24,.85);border:1px solid var(--border);border-radius:24px;padding:32px 28px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(108,99,255,.12),0 24px 48px rgba(0,0,0,.6);animation:slideUp .5s ease;}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+
+.pay-header{text-align:center;margin-bottom:24px;}
+.brand{display:inline-flex;align-items:center;gap:8px;margin-bottom:14px;}
+.brand-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 12px var(--green);animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.brand-name{font-size:13px;font-weight:600;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.order-label{font-size:22px;font-weight:700;margin-bottom:6px;}
+.order-meta{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+.amount-box{background:linear-gradient(135deg,rgba(108,99,255,.12),rgba(0,229,160,.08));border:1px solid rgba(108,99,255,.3);border-radius:16px;padding:20px;text-align:center;margin-bottom:24px;position:relative;overflow:hidden;}
+.amount-box::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(108,99,255,.08),transparent 60%);animation:spin 8s linear infinite;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.amount-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;position:relative;}
+.amount-val{font-size:42px;font-weight:700;position:relative;background:linear-gradient(135deg,#fff,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.amount-note{font-size:11px;color:var(--gold);margin-top:6px;position:relative;}
+
+.qr-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:24px;}
+.qr-frame{position:relative;padding:12px;background:#fff;border-radius:16px;box-shadow:0 0 30px rgba(108,99,255,.3);margin-bottom:14px;}
+.qr-frame img{width:200px;height:200px;display:block;border-radius:8px;}
+.qr-badge{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 12px;border-radius:20px;}
+
+.timer-bar-wrap{margin-bottom:20px;}
+.timer-label{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;}
+.timer-track{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.timer-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;transition:width .9s linear;}
+
+.steps{margin-bottom:24px;}
+.steps-title{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;}
+.step{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.step:last-child{border-bottom:none;}
+.step-num{width:22px;height:22px;border-radius:50%;background:rgba(108,99,255,.2);border:1px solid rgba(108,99,255,.4);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-text{font-size:13px;color:var(--muted);line-height:1.5;}
+.step-text strong{color:var(--text);}
+
+/* I Paid Button */
+.ipaid-section{margin-top:4px;margin-bottom:16px;}
+.btn-ipaid{
+  width:100%;padding:13px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,rgba(0,229,160,.15),rgba(0,229,160,.08));
+  border:1px solid rgba(0,229,160,.3);
+  color:var(--green);font-family:inherit;font-size:14px;font-weight:700;
+  cursor:pointer;letter-spacing:.5px;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-ipaid:hover{background:linear-gradient(135deg,rgba(0,229,160,.25),rgba(0,229,160,.12));border-color:var(--green);transform:translateY(-1px);box-shadow:0 4px 20px rgba(0,229,160,.2);}
+.btn-ipaid:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.ipaid-attempts{text-align:center;font-size:11px;color:var(--muted);margin-top:6px;}
+.ipaid-attempts span{color:var(--gold);}
+
+/* UTR Form */
+.utr-form{
+  margin-top:8px;
+  background:rgba(245,200,66,.04);
+  border:1px solid rgba(245,200,66,.2);
+  border-radius:14px;padding:20px;
+  animation:slideUp .3s ease;
+}
+.utr-title{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:4px;}
+.utr-sub{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.5;}
+.utr-input{
+  width:100%;background:var(--bg);border:1px solid rgba(245,200,66,.3);
+  color:var(--text);padding:10px 14px;border-radius:10px;
+  font-family:'JetBrains Mono',monospace;font-size:14px;outline:none;
+  letter-spacing:1px;transition:border-color .2s;margin-bottom:10px;
+}
+.utr-input:focus{border-color:var(--gold);}
+.btn-utr-submit{
+  width:100%;padding:11px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,rgba(245,200,66,.2),rgba(245,200,66,.1));
+  border:1px solid rgba(245,200,66,.4);
+  color:var(--gold);font-family:inherit;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .15s;
+}
+.btn-utr-submit:hover{background:rgba(245,200,66,.25);}
+.btn-utr-submit:disabled{opacity:.4;cursor:not-allowed;}
+
+/* UTR Pending state */
+.utr-pending-box{
+  margin-top:8px;
+  background:rgba(245,200,66,.04);
+  border:1px solid rgba(245,200,66,.2);
+  border-radius:12px;padding:16px;text-align:center;
+}
+.utr-pending-icon{font-size:28px;margin-bottom:8px;}
+.utr-pending-text{font-size:13px;color:var(--gold);font-weight:600;margin-bottom:4px;}
+.utr-pending-sub{font-size:11px;color:var(--muted);}
+.utr-code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text);margin-top:8px;}
+
+.pay-footer{text-align:center;margin-top:20px;font-size:11px;color:var(--muted);}
+.pay-footer span{color:var(--accent);}
+
+.loading{text-align:center;padding:60px 20px;color:var(--muted);font-size:14px;}
+.spinner{width:36px;height:36px;border:3px solid rgba(108,99,255,.2);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px;}
+</style>
+</head>
+<body>
+<div class="bg-wrap">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+<div class="grid-lines"></div>
+<div class="page-wrap">
+  <div class="card" id="mainCard">
+    <div class="loading"><div class="spinner"></div>Loading order...</div>
+  </div>
+</div>
+
+<script>
+const orderId  = location.pathname.split("/pay/")[1];
+let pollTimer, elapsed = 0, maxWait = 600;
+let iPaidCount = 0, maxIPaid = 3;
+let orderData  = null;
+
+async function loadOrder() {
+  try {
+    const r = await fetch(`/api/order/${orderId}`);
+    const o = await r.json();
+    if (o.error) { showError(o.error); return; }
+    orderData = o;
+    if (o.status === "SUCCESS")        { renderSuccess(o); return; }
+    if (o.status === "CANCELLED")      { renderCancelled(); return; }
+    if (o.utr_status === "PENDING_VERIFY") { renderOrder(o); showUtrPending(o.utr); return; }
+    renderOrder(o);
+    startPoll();
+  } catch(e) { showError("Server unreachable"); }
+}
+
+function renderOrder(o) {
+  document.getElementById("mainCard").innerHTML = `
+    <div class="pay-header">
+      <div class="brand"><div class="brand-dot"></div><div class="brand-name">Secure Payment</div></div>
+      <div class="order-label">${o.label}</div>
+      <div class="order-meta">Order #${o.order_id} &nbsp;·&nbsp; ${o.created_at}</div>
+    </div>
+
+    <div class="amount-box">
+      <div class="amount-label">Pay Exactly</div>
+      <div class="amount-val">₹${o.unique_amount}</div>
+      <div class="amount-note">⚠️ Send this exact amount for auto-confirmation</div>
+    </div>
+
+    <div class="qr-wrap">
+      <div class="qr-frame">
+        <img src="data:image/png;base64,${o.qr_base64}" alt="UPI QR"/>
+        <div class="qr-badge">SCAN &amp; PAY</div>
+      </div>
+    </div>
+
+    <div class="timer-bar-wrap">
+      <div class="timer-label">
+        <span id="statusLabel">⏳ Waiting for payment...</span>
+        <span id="timerLabel">10:00</span>
+      </div>
+      <div class="timer-track"><div class="timer-fill" id="timerFill" style="width:100%"></div></div>
+    </div>
+
+    <div class="steps">
+      <div class="steps-title">How to pay</div>
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Open any <strong>UPI app</strong> (GPay, PhonePe, Paytm)</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Scan the QR code above</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Enter <strong>exactly ₹${o.unique_amount}</strong> — do not round off</div>
+      </div>
+    </div>
+
+    <div class="ipaid-section">
+      <button class="btn-ipaid" id="iPaidBtn" onclick="iPaid()">
+        ✅ I have paid
+      </button>
+      <div class="ipaid-attempts" id="iPaidAttempts" style="display:none;">
+        Checking... <span id="attemptsLeft"></span> attempts left
+      </div>
+    </div>
+
+    <div id="utrSection"></div>
+
+    <div class="pay-footer">Secured by <span>FamPay Gateway</span></div>
+  `;
+  startCountdown();
+}
+
+// ── I Paid logic
+async function iPaid() {
+  if (iPaidCount >= maxIPaid) return;
+  const btn = document.getElementById("iPaidBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0;"></div> Checking...`;
+
+  try {
+    const r = await fetch(`/api/order/${orderId}`);
+    const o = await r.json();
+    if (o.status === "SUCCESS") {
+      clearInterval(pollTimer);
+      renderSuccess(o);
+      return;
+    }
+  } catch(e) {}
+
+  iPaidCount++;
+  const left = maxIPaid - iPaidCount;
+
+  if (iPaidCount >= maxIPaid) {
+    // Show UTR form
+    btn.style.display = "none";
+    document.getElementById("iPaidAttempts").style.display = "none";
+    showUtrForm();
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = `✅ I have paid`;
+    const att = document.getElementById("iPaidAttempts");
+    if (att) {
+      att.style.display = "block";
+      document.getElementById("attemptsLeft").textContent = left;
+    }
+  }
+}
+
+function showUtrForm() {
+  document.getElementById("utrSection").innerHTML = `
+    <div class="utr-form">
+      <div class="utr-title">🔍 Manual Verification</div>
+      <div class="utr-sub">Payment not detected automatically. Enter your UTR / Transaction ID from your UPI app to request manual verification by admin.</div>
+      <input class="utr-input" id="utrInput" placeholder="e.g. 426123456789" maxlength="30" type="text"/>
+      <button class="btn-utr-submit" id="utrSubmitBtn" onclick="submitUTR()">
+        📤 Submit UTR for Verification
+      </button>
+    </div>
+  `;
+}
+
+async function submitUTR() {
+  const utr = (document.getElementById("utrInput")?.value || "").trim();
+  if (!utr || utr.length < 6) {
+    document.getElementById("utrInput").style.borderColor = "var(--red)";
+    return;
+  }
+  const btn = document.getElementById("utrSubmitBtn");
+  btn.disabled = true;
+  btn.textContent = "Submitting...";
+  try {
+    const r = await fetch(`/api/order/${orderId}/utr`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({utr})
+    });
+    const d = await r.json();
+    if (d.error) { btn.disabled=false; btn.textContent="📤 Submit UTR"; return; }
+    if (d.status === "SUCCESS") { renderSuccess(orderData); return; }
+    showUtrPending(utr);
+  } catch(e) { btn.disabled=false; }
+}
+
+function showUtrPending(utr) {
+  const sec = document.getElementById("utrSection");
+  if (!sec) return;
+  sec.innerHTML = `
+    <div class="utr-pending-box">
+      <div class="utr-pending-icon">🕐</div>
+      <div class="utr-pending-text">UTR Submitted</div>
+      <div class="utr-pending-sub">Admin will verify your payment shortly. Please wait.</div>
+      <div class="utr-code">UTR: ${utr}</div>
+    </div>
+  `;
+  // Keep polling — admin might approve
+  startPoll();
+}
+
+// ── Countdown
+function startCountdown() {
+  setInterval(() => {
+    elapsed++;
+    const rem = Math.max(0, maxWait - elapsed);
+    const m   = String(Math.floor(rem/60)).padStart(2,"0");
+    const s   = String(rem%60).padStart(2,"0");
+    const lbl = document.getElementById("timerLabel");
+    const fil = document.getElementById("timerFill");
+    if (lbl) lbl.textContent = `${m}:${s}`;
+    if (fil) fil.style.width = `${(rem/maxWait)*100}%`;
+  }, 1000);
+}
+
+// ── Auto poll
+function startPoll() {
+  if (pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const r = await fetch(`/api/order/${orderId}`);
+      const o = await r.json();
+      if (o.status === "SUCCESS") {
+        clearInterval(pollTimer);
+        renderSuccess(o);
+      } else if (o.status === "CANCELLED") {
+        clearInterval(pollTimer);
+        renderCancelled();
+      }
+    } catch(e) {}
+  }, 4000);
+}
+
+// ── Success — with redirect
+function renderSuccess(o) {
+  clearInterval(pollTimer);
+  const redirectUrl = o.redirect_url || "";
+  document.getElementById("mainCard").innerHTML = `
+    <div style="text-align:center;padding:20px 0;">
+      <div style="font-size:72px;margin-bottom:16px;">✅</div>
+      <div style="font-size:26px;font-weight:700;color:#00e5a0;margin-bottom:8px;">Payment Confirmed!</div>
+      <div style="font-size:13px;color:#5a5a7a;margin-bottom:24px;">${redirectUrl ? "Redirecting you..." : "Your payment has been confirmed"}</div>
+      <div style="background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:14px;padding:20px;text-align:left;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          <span style="color:#5a5a7a;font-size:13px;">Amount</span>
+          <span style="color:#00e5a0;font-weight:700;">₹${o.unique_amount}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          <span style="color:#5a5a7a;font-size:13px;">Paid By</span>
+          <span style="color:#e8e8f0;font-size:13px;">${o.paid_by||"—"}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;">
+          <span style="color:#5a5a7a;font-size:13px;">Order</span>
+          <span style="color:#e8e8f0;font-size:13px;">#${o.order_id}</span>
+        </div>
+      </div>
+      ${redirectUrl ? `<div style="margin-top:20px;font-size:12px;color:#5a5a7a;">Redirecting in <span id="rdCount" style="color:#00e5a0;">3</span>s...</div>` : ""}
+    </div>
+    <div class="pay-footer">Secured by <span>FamPay Gateway</span></div>
+  `;
+  if (redirectUrl) {
+    let c = 3;
+    const iv = setInterval(() => {
+      c--;
+      const el = document.getElementById("rdCount");
+      if (el) el.textContent = c;
+      if (c <= 0) { clearInterval(iv); window.location.href = redirectUrl; }
+    }, 1000);
+  }
+}
+
+function renderCancelled() {
+  document.getElementById("mainCard").innerHTML = `
+    <div style="text-align:center;padding:40px 0;">
+      <div style="font-size:64px;margin-bottom:16px;">❌</div>
+      <div style="font-size:22px;font-weight:700;color:#ff4d6d;">Order Cancelled</div>
+      <div style="font-size:13px;color:#5a5a7a;margin-top:8px;">This payment link is no longer active.</div>
+    </div>
+  `;
+}
+
+function showError(msg) {
+  document.getElementById("mainCard").innerHTML = `
+    <div style="text-align:center;padding:40px 0;">
+      <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+      <div style="font-size:16px;color:#ff4d6d;">${msg}</div>
+    </div>
+  `;
+}
+
+loadOrder();
+</script>
+</body>
+</html>
